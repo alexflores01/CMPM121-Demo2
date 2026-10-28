@@ -92,13 +92,13 @@ canvas.addEventListener("pointermove", (e) => {
 
 canvas.addEventListener("pointerup", () => {
   if (!currentStroke) return;
-  commands.push(currentStroke); // commit on release
+  commands.push(currentStroke);
   currentStroke = null;
   render();
 });
 
 canvas.addEventListener("pointercancel", () => {
-  currentStroke = null; // discard, never committed
+  currentStroke = null;
   render();
 });
 
