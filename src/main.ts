@@ -51,16 +51,35 @@ canvas.height = 500;
 canvas.style.border = "2px solid black";
 canvas.style.touchAction = "none";
 
+// BUttons
 const redrawButton = document.createElement("button");
 redrawButton.textContent = "Redraw";
+const undoButton = document.createElement("button");
+undoButton.textContent = "Undo";
+const redoButton = document.createElement("button");
+redoButton.textContent = "Redo";
 
-app.append(heading, message);
+app.append(
+  heading,
+  message,
+  canvas,
+  document.createElement("br"),
+  redrawButton,
+  undoButton,
+  redoButton,
+);
+
+undoButton.addEventListener("click", undo);
+redoButton.addEventListener("click", redo);
 
 const ctx = canvas.getContext("2d")!;
 
 // State of program
 const commands: DrawCommand[] = [];
+const redoStack: DrawCommand[] = [];
 let currentStroke: StrokeCommand | null = null;
+
+updateButtons();
 
 // Rendering the program
 function render() {
@@ -69,12 +88,41 @@ function render() {
   currentStroke?.display(ctx);
 }
 
+// History Functions
+function commit(command: DrawCommand) {
+  commands.push(command);
+  redoStack.length = 0;
+  updateButtons();
+  render();
+}
+
+function undo() {
+  const command = commands.pop();
+  if (!command) return;
+  redoStack.push(command);
+  updateButtons();
+  render();
+}
+
+function redo() {
+  const command = redoStack.pop();
+  if (!command) return;
+  commands.push(command);
+  updateButtons();
+  render();
+}
+
+function updateButtons() {
+  undoButton.disabled = commands.length === 0;
+  redoButton.disabled = redoStack.length === 0;
+}
+
 // User Input
 function pos(e: PointerEvent): Point {
   const rect = canvas.getBoundingClientRect();
   return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top,
+    x: e.clientX - rect.left - canvas.clientLeft,
+    y: e.clientY - rect.top - canvas.clientTop,
   };
 }
 
@@ -92,7 +140,7 @@ canvas.addEventListener("pointermove", (e) => {
 
 canvas.addEventListener("pointerup", () => {
   if (!currentStroke) return;
-  commands.push(currentStroke);
+  commit(currentStroke);
   currentStroke = null;
   render();
 });
@@ -105,5 +153,5 @@ canvas.addEventListener("pointercancel", () => {
 // Redraw Check
 redrawButton.addEventListener("click", () => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  render();
+  setTimeout(render, 800);
 });
