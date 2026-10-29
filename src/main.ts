@@ -7,6 +7,7 @@ interface Point {
 
 interface DrawCommand {
   display(ctx: CanvasRenderingContext2D): void;
+  drag(point: Point): void;
 }
 
 class StrokeCommand implements DrawCommand {
@@ -16,7 +17,7 @@ class StrokeCommand implements DrawCommand {
     private color: string,
   ) {}
 
-  addPoint(point: Point) {
+  drag(point: Point) {
     this.points.push(point);
   }
 
@@ -34,6 +35,23 @@ class StrokeCommand implements DrawCommand {
       ctx.lineTo(this.points[0].x, this.points[0].y);
     }
     ctx.stroke();
+    ctx.restore();
+  }
+}
+
+class StickerCommand implements DrawCommand {
+  constructor(private p: Point, private emoji: string, private size: number) {
+  }
+
+  drag(point: Point) {
+    this.p = point;
+  }
+  display(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    ctx.font = `${this.size}px serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(this.emoji, this.p.x, this.p.y);
     ctx.restore();
   }
 }
@@ -74,10 +92,64 @@ redoButton.addEventListener("click", redo);
 
 const ctx = canvas.getContext("2d")!;
 
+type Tool =
+  | { label: string; kind: "marker"; width: number }
+  | { label: string; kind: "sticker"; emoji: string; size: number };
+
+const tools: Tool[] = [
+  { label: "Thin", kind: "marker", width: 2 },
+  { label: "Thick", kind: "marker", width: 8 },
+  { label: "🎃", kind: "sticker", emoji: "🎃", size: 40 },
+  { label: "❤️", kind: "sticker", emoji: "❤️", size: 40 },
+  { label: "👀", kind: "sticker", emoji: "👀", size: 40 },
+];
+
+let selectedTool: Tool = tools[0];
+
+const toolBar = document.createElement("div");
+canvas.after(toolBar);
+
+function buildPalette() {
+  toolBar.replaceChildren();
+  for (const tool of tools) {
+    const b = document.createElement("button");
+    b.textContent = tool.label;
+    b.style.fontWeight = tool === selectedTool ? "bold" : "normal";
+    b.addEventListener("click", () => {
+      selectedTool = tool;
+      buildPalette();
+    });
+    toolBar.append(b);
+  }
+}
+buildPalette();
+function createCommand(tool: Tool, p: Point): DrawCommand {
+  return tool.kind === "marker"
+    ? new StrokeCommand([p], tool.width, "black")
+    : new StickerCommand(p, tool.emoji, tool.size);
+}
+
+const exportButton = document.createElement("button");
+exportButton.textContent = "Export";
+exportButton.addEventListener("click", () => {
+  const out = document.createElement("canvas");
+  out.width = canvas.width * 2;
+  out.height = canvas.height * 2;
+  const octx = out.getContext("2d")!;
+  octx.scale(2, 2);
+  for (const command of commands) command.display(octx);
+  const a = document.createElement("a");
+  a.href = out.toDataURL("image/png");
+  a.download = "sketchpad.png";
+  a.click();
+});
+
+redoButton.after(exportButton);
+
 // State of program
 const commands: DrawCommand[] = [];
 const redoStack: DrawCommand[] = [];
-let currentStroke: StrokeCommand | null = null;
+let currentCommand: DrawCommand | null = null;
 
 updateButtons();
 
@@ -85,7 +157,7 @@ updateButtons();
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   for (const command of commands) command.display(ctx);
-  currentStroke?.display(ctx);
+  currentCommand?.display(ctx);
 }
 
 // History Functions
@@ -128,25 +200,25 @@ function pos(e: PointerEvent): Point {
 
 canvas.addEventListener("pointerdown", (e) => {
   canvas.setPointerCapture(e.pointerId);
-  currentStroke = new StrokeCommand([pos(e)], 2, "black");
+  currentCommand = createCommand(selectedTool, pos(e));
   render();
 });
 
 canvas.addEventListener("pointermove", (e) => {
-  if (!currentStroke) return;
-  currentStroke.addPoint(pos(e));
+  if (!currentCommand) return;
+  currentCommand.drag(pos(e));
   render();
 });
 
 canvas.addEventListener("pointerup", () => {
-  if (!currentStroke) return;
-  commit(currentStroke);
-  currentStroke = null;
+  if (!currentCommand) return;
+  commit(currentCommand);
+  currentCommand = null;
   render();
 });
 
 canvas.addEventListener("pointercancel", () => {
-  currentStroke = null;
+  currentCommand = null;
   render();
 });
 
