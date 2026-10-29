@@ -160,28 +160,30 @@ function render() {
   currentCommand?.display(ctx);
 }
 
+function refresh() {
+  updateButtons();
+  render();
+}
+
 // History Functions
 function commit(command: DrawCommand) {
   commands.push(command);
   redoStack.length = 0;
-  updateButtons();
-  render();
+  refresh();
 }
 
 function undo() {
   const command = commands.pop();
   if (!command) return;
   redoStack.push(command);
-  updateButtons();
-  render();
+  refresh();
 }
 
 function redo() {
   const command = redoStack.pop();
   if (!command) return;
   commands.push(command);
-  updateButtons();
-  render();
+  refresh();
 }
 
 function updateButtons() {
