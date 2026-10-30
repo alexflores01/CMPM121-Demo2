@@ -1,4 +1,16 @@
-# D2 starter
+# D2 Sketchpad
+
+A drawing app made with HTML canvas and TypeScript
+
+**App link:** https://alexflores01.github.io/CMPM121-Demo2/
+
+## How to use
+
+- Pick a tool from the row above the canvas: **Thin** or **Thick** markers, or a sticker (🎃 ❤️ 👀).
+- Click and drag on the canvas to draw a stroke. Click to place a sticker, you can drag before releasing to adjust its position.
+- **+ Custom sticker** lets you type an emoji or short text to make your own sticker tool. It appears in the tool row and works like the built in stickers.
+- **Export** downloads a PNG of your drawing at 2x size. The background is **transparent**, so it may look black or checkered in some image viewers.
+- **Redraw** clears the canvas pixels and redraws everything from the saved document after a shot delay. This is a check that the document, not the pixels, holds the drawing. It does not delete anything.
 
 A minimal TypeScript/Vite browser project with Deno checks and GitHub Pages deployment.
 
