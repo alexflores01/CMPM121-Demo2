@@ -77,6 +77,14 @@ undoButton.textContent = "Undo";
 const redoButton = document.createElement("button");
 redoButton.textContent = "Redo";
 
+const toolRow = document.createElement("div");
+const actionRow = document.createElement("div");
+for (const row of [toolRow, actionRow]) {
+  row.style.display = "flex";
+  row.style.gap = "8px";
+  row.style.marginTop = "10px";
+}
+
 app.append(
   heading,
   message,
@@ -107,7 +115,7 @@ const tools: Tool[] = [
 let selectedTool: Tool = tools[0];
 
 const toolBar = document.createElement("div");
-canvas.after(toolBar);
+message.after(toolBar);
 
 function buildPalette() {
   toolBar.replaceChildren();
@@ -145,6 +153,19 @@ exportButton.addEventListener("click", () => {
 });
 
 redoButton.after(exportButton);
+
+const customButton = document.createElement("button");
+customButton.textContent = "+ Custom sticker";
+customButton.addEventListener("click", () => {
+  const text = prompt("Enter an emoji or short text for the sticker:");
+  if (!text || !text.trim()) return;
+  const emoji = text.trim();
+  const tool: Tool = { label: emoji, kind: "sticker", emoji, size: 40 };
+  tools.push(tool);
+  selectedTool = tool;
+  buildPalette();
+});
+exportButton.after(customButton);
 
 // State of program
 const commands: DrawCommand[] = [];
