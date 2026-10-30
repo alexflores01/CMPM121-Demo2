@@ -77,14 +77,6 @@ undoButton.textContent = "Undo";
 const redoButton = document.createElement("button");
 redoButton.textContent = "Redo";
 
-const toolRow = document.createElement("div");
-const actionRow = document.createElement("div");
-for (const row of [toolRow, actionRow]) {
-  row.style.display = "flex";
-  row.style.gap = "8px";
-  row.style.marginTop = "10px";
-}
-
 app.append(
   heading,
   message,
